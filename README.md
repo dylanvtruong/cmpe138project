@@ -6,6 +6,8 @@ This application uses real traffic-safety data from the BigQuery public dataset:
 
 `bigquery-public-data.dataflix_traffic_safety`
 
+The dataset includes details on fatal crashes, road conditions, and vehicle types categorized by state, year, and roadway.
+
 The project copies selected traffic-safety data into a BigQuery dataset named `cmpe138_project` for analysis.
 
 ## System Diagram
