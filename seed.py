@@ -43,12 +43,53 @@ job_config = bigquery.QueryJobConfig(
     maximum_bytes_billed=150_000_000,
 )
 
+# Validate the query and estimate how much data it will read.
+dry_run_config = bigquery.QueryJobConfig(
+    dry_run=True,
+    use_query_cache=False,
+)
+
+dry_run_job = client.query(
+    query,
+    job_config=dry_run_config,
+    location="US",
+)
+
+estimated_bytes = dry_run_job.total_bytes_processed
+billing_limit = job_config.maximum_bytes_billed
+
+print(f"Destination: {destination_table}")
+print(f"Estimated bytes processed: {estimated_bytes:,}")
+print(f"Maximum bytes billed: {billing_limit:,}")
+
+if estimated_bytes > billing_limit:
+    raise SystemExit(
+        "The estimate exceeds the billing limit. "
+        "Reduce the data slice before running."
+    )
+
+# WRITE_TRUNCATE replaces the destination table on each run.
+answer = input(
+    "Copy the data and replace the destination table? [y/N]: "
+)
+
+if answer.strip().lower() != "y":
+    raise SystemExit("Seed cancelled.")
+
 print(f"Copying real data into {destination_table}...")
 
-query_job = client.query(query, job_config=job_config)
+query_job = client.query(
+    query,
+    job_config=job_config,
+    location="US",
+)
 query_job.result()
 
 table = client.get_table(destination_table)
 
+print("\nSeed completed.")
 print(f"Created table: {destination_table}")
 print(f"Row count: {table.num_rows:,}")
+
+if table.num_rows == 0:
+    print("WARNING: No rows were copied. Check the source filter.")
