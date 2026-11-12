@@ -74,7 +74,13 @@ python seed.py
 Seed output:
 
 ```text
+Destination: cmpe138-fa26.cmpe138_project.accident
+Estimated bytes processed: 115,453,915
+Maximum bytes billed: 150,000,000
+Copy the data and replace the destination table? [y/N]: y
 Copying real data into cmpe138-fa26.cmpe138_project.accident...
+
+Seed completed.
 Created table: cmpe138-fa26.cmpe138_project.accident
 Row count: 34,528
 ```
