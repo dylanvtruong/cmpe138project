@@ -16,7 +16,13 @@ To come.
 
 ## What to Install
 
-To come.
+Install the Google Cloud BigQuery Python client:
+
+```powershell
+pip install google-cloud-bigquery
+```
+
+Install the Google Cloud CLI separately if it is not already installed.
 
 ## How to Sign In
 
@@ -48,21 +54,35 @@ gcloud config get-value project
 
 ## How to Seed
 
-The seed script copies real 2017 accident data from the BigQuery public dataset into the `cmpe138_project` dataset.
-
-The source table is:
-
-```text
-bigquery-public-data.dataflix_traffic_safety.accident
-```
-
-The destination table is:
+The seed script copies selected real FARS traffic-safety data from 2010 through
+2018 into the `cmpe138_project` dataset. It loads seven related tables:
 
 ```text
-cmpe138-fa26.cmpe138_project.accident
+accident
+vehicle
+person
+distract
+drimpair
+factor
+safetyeq
 ```
 
-The seed script copies selected columns from 34,528 real accident records.
+The source dataset is:
+
+```text
+bigquery-public-data.dataflix_traffic_safety
+```
+
+The destination dataset is:
+
+```text
+cmpe138-fa26.cmpe138_project
+```
+
+The seed selects only the columns needed by the project questions. It performs
+dry-run byte estimates, uses a maximum of 150,000,000 bytes billed per table,
+asks for confirmation before replacing the destination tables, declares
+non-enforced primary and foreign keys, and prints duplicate-key counts.
 
 Seed command:
 
@@ -74,20 +94,45 @@ python seed.py
 Seed output:
 
 ```text
-Destination: cmpe138-fa26.cmpe138_project.accident
-Estimated bytes processed: 115,453,915
-Maximum bytes billed: 150,000,000
-Copy the data and replace the destination table? [y/N]: y
-Copying real data into cmpe138-fa26.cmpe138_project.accident...
+Copy all seven data tables and replace all tables? [y/N]: y
 
+Adding non-enforced primary and foreign keys...
 Seed completed.
 Created table: cmpe138-fa26.cmpe138_project.accident
-Row count: 34,528
+Accident row count: 289,074
+Created table: cmpe138-fa26.cmpe138_project.vehicle
+Vehicle row count: 434,970
+Created table: cmpe138-fa26.cmpe138_project.person
+Person row count: 714,503
+Created table: cmpe138-fa26.cmpe138_project.distract
+Distract row count: 436,464
+Created table: cmpe138-fa26.cmpe138_project.drimpair
+Drimpair row count: 437,770
+Created table: cmpe138-fa26.cmpe138_project.factor
+Factor row count: 436,643
+Created table: cmpe138-fa26.cmpe138_project.safetyeq
+Safetyeq row count: 61,098
+
+Duplicate-key checks:
+accident: duplicate groups=0, extra duplicate rows=0
+vehicle: duplicate groups=0, extra duplicate rows=0
+person: duplicate groups=0, extra duplicate rows=0
+distract: duplicate groups=0, extra duplicate rows=0
+drimpair: duplicate groups=0, extra duplicate rows=0
+factor: duplicate groups=0, extra duplicate rows=0
+safetyeq: duplicate groups=133, extra duplicate rows=159
 ```
+
+The `safetyeq` duplicate rows are retained and reported because the source
+contains multiple distinct equipment records for some non-motorists. The seed
+is safe to run again because each destination table uses `WRITE_TRUNCATE`.
+
+The current seeded row counts total 2,810,522 rows across the seven tables.
 
 ## How to Run the Workload
 
-To come.
+To come. The numbered workload statements will answer the nine project
+questions and will be stored in `workload.sql`.
 
 ## How to Start the Application
 
