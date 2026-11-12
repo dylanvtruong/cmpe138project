@@ -134,7 +134,7 @@ The current seeded row counts total 2,810,522 rows across the seven tables.
 The numbered workload statements are stored in `workload.sql` and correspond
 to the nine project questions.
 
-Questions 1–3 currently have working SQL statements. Questions 4–9 are listed
+Questions 1–6 currently have working SQL statements. Questions 7–9 are listed
 in the file and will be implemented next.
 
 Run each statement separately in BigQuery. Before running a statement:
@@ -150,6 +150,9 @@ Run each statement separately in BigQuery. Before running a statement:
 - Question 2 reports alcohol-involved fatal-crash percentages by state and year.
 - Question 3 reports driver-impairment categories, crash counts, and fatalities
 by state and year.
+- Question 4 reports total crashes, distracted driving crashes, and fatalities by time of day and year.
+- Question 5 reports distracted driving to impaired driving vehicle based on counts and percentages by vehicle type and state.
+- Question 6 reports injury severity among occupants based on reported safety equipment use across states.
 
 ## How to Start the Application
 
