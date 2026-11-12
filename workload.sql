@@ -191,16 +191,19 @@ SELECT
   REST_USE AS safety_equipment,
   COUNT(*) AS total_occupants,
 
-  COUNTIF(INJ_SEV IN (3,4)) AS fatal_or_severe_injuries,
+  COUNTIF(
+    SAFE_CAST(INJ_SEV AS INT64) IN (3,4)) AS fatal_or_severe_injuries,
 
   ROUND(
-    100 * COUNTIF(INJ_SEV IN (3,4)) / COUNT(*),
+    100 * COUNTIF(SAFE_CAST(INJ_SEV AS INT64) IN (3,4)) / COUNT(*),
     2
   ) AS fatal_or_severe_percentage
+
 FROM `cmpe138-fa26.cmpe138_project.person`
+
 WHERE L_YEAR BETWEEN 2010 AND 2018
   AND REST_USE IS NOT NULL
-  AND INJ_SEV IN (0, 1, 2, 3, 4)
+
 GROUP BY STATE, safety_equipment
 ORDER BY STATE, fatal_or_severe_percentage DESC;
 
