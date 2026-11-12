@@ -80,6 +80,13 @@ FROM (
 """
 
 DATASET_ID = "cmpe138_project"
+START_YEAR = int(os.environ.get("FARS_START_YEAR", "2000"))
+END_YEAR = int(os.environ.get("FARS_END_YEAR", "2018"))
+MAX_BYTES_BILLED = int(
+    os.environ.get("MAX_BYTES_BILLED", "150000000")
+)
+YEAR_FILTER = f"WHERE L_YEAR BETWEEN {START_YEAR} AND {END_YEAR}"
+
 ACCIDENT_TABLE_ID = "accident"
 VEHICLE_TABLE_ID = "vehicle"
 PERSON_TABLE_ID = "person"
@@ -119,7 +126,7 @@ dataset = bigquery.Dataset(f"{PROJECT_ID}.{DATASET_ID}")
 dataset.location = "US"
 client.create_dataset(dataset, exists_ok=True)
 
-accident_query = """
+accident_query = f"""
 SELECT
   L_YEAR,
   STATE,
@@ -130,10 +137,10 @@ SELECT
   DRUNK_DR,
   DATE_PARTITION
 FROM `bigquery-public-data.dataflix_traffic_safety.accident`
-WHERE L_YEAR BETWEEN 2010 AND 2018
+{YEAR_FILTER}
 """
 
-vehicle_query = """
+vehicle_query = f"""
 SELECT
   L_YEAR,
   STATE,
@@ -145,10 +152,10 @@ SELECT
   DR_DRINK,
   DATE_PARTITION
 FROM `bigquery-public-data.dataflix_traffic_safety.vehicle`
-WHERE L_YEAR BETWEEN 2010 AND 2018
+{YEAR_FILTER}
 """
 
-person_query = """
+person_query = f"""
 SELECT
   L_YEAR,
   STATE,
@@ -163,10 +170,10 @@ SELECT
   SEX,
   DATE_PARTITION
 FROM `bigquery-public-data.dataflix_traffic_safety.person`
-WHERE L_YEAR BETWEEN 2010 AND 2018
+{YEAR_FILTER}
 """
 
-distract_query = """
+distract_query = f"""
 SELECT
   L_YEAR,
   STATE,
@@ -175,10 +182,10 @@ SELECT
   MDRDSTRD,
   DATE_PARTITION
 FROM `bigquery-public-data.dataflix_traffic_safety.distract`
-WHERE L_YEAR BETWEEN 2010 AND 2018
+{YEAR_FILTER}
 """
 
-drimpair_query = """
+drimpair_query = f"""
 SELECT
   L_YEAR,
   STATE,
@@ -187,10 +194,10 @@ SELECT
   DRIMPAIR,
   DATE_PARTITION
 FROM `bigquery-public-data.dataflix_traffic_safety.drimpair`
-WHERE L_YEAR BETWEEN 2010 AND 2018
+{YEAR_FILTER}
 """
 
-factor_query = """
+factor_query = f"""
 SELECT
   L_YEAR,
   STATE,
@@ -199,10 +206,10 @@ SELECT
   MFACTOR,
   DATE_PARTITION
 FROM `bigquery-public-data.dataflix_traffic_safety.factor`
-WHERE L_YEAR BETWEEN 2010 AND 2018
+{YEAR_FILTER}
 """
 
-safetyeq_query = """
+safetyeq_query = f"""
 SELECT
   L_YEAR,
   STATE,
@@ -217,13 +224,13 @@ SELECT
   NMOTHPRE,
   DATE_PARTITION
 FROM `bigquery-public-data.dataflix_traffic_safety.safetyeq`
-WHERE L_YEAR BETWEEN 2010 AND 2018
+{YEAR_FILTER}
 """
 
 job_config = bigquery.QueryJobConfig(
     destination=accident_destination_table,
     write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-    maximum_bytes_billed=150_000_000,
+    maximum_bytes_billed=MAX_BYTES_BILLED,
 )
 
 # Validate the query and estimate how much data it will read.
@@ -244,37 +251,37 @@ billing_limit = job_config.maximum_bytes_billed
 vehicle_job_config = bigquery.QueryJobConfig(
     destination=vehicle_destination_table,
     write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-    maximum_bytes_billed=150_000_000,
+    maximum_bytes_billed=MAX_BYTES_BILLED,
 )
 
 person_job_config = bigquery.QueryJobConfig(
     destination=person_destination_table,
     write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-    maximum_bytes_billed=150_000_000,
+    maximum_bytes_billed=MAX_BYTES_BILLED,
 )
 
 distract_job_config = bigquery.QueryJobConfig(
     destination=distract_destination_table,
     write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-    maximum_bytes_billed=150_000_000,
+    maximum_bytes_billed=MAX_BYTES_BILLED,
 )
 
 drimpair_job_config = bigquery.QueryJobConfig(
     destination=drimpair_destination_table,
     write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-    maximum_bytes_billed=150_000_000,
+    maximum_bytes_billed=MAX_BYTES_BILLED,
 )
 
 factor_job_config = bigquery.QueryJobConfig(
     destination=factor_destination_table,
     write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-    maximum_bytes_billed=150_000_000,
+    maximum_bytes_billed=MAX_BYTES_BILLED,
 )
 
 safetyeq_job_config = bigquery.QueryJobConfig(
     destination=safetyeq_destination_table,
     write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-    maximum_bytes_billed=150_000_000,
+    maximum_bytes_billed=MAX_BYTES_BILLED,
 )
 
 vehicle_dry_run_job = client.query(
@@ -343,6 +350,7 @@ safetyeq_dry_run_job = client.query(
 
 safetyeq_estimated_bytes = safetyeq_dry_run_job.total_bytes_processed
 
+print(f"Seed year range: {START_YEAR}-{END_YEAR}")
 print(f"Accident destination: {accident_destination_table}")
 print(f"Accident estimated bytes: {estimated_bytes:,}")
 print(f"Vehicle destination: {vehicle_destination_table}")
