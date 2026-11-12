@@ -96,17 +96,113 @@ ORDER BY
 -- Question 4
 -- How does the time of day impact the presence and severity of distracted
 -- driving accidents?
+WITH distracted_crashes AS (
+  SELECT DISTINCT
+    L_YEAR,
+    ST_CASE
+  FROM `cmpe138-fa26.cmpe138_project.distract`
+  WHERE L_YEAR BETWEEN 2010 AND 2018
+    AND MDRDSTRD IS NOT NULL
+    AND TRIM(CAST(MDRDSTRD AS STRING)) NOT IN ('', '0')
+)
 
+SELECT
+  a.L_YEAR,
+  CASE
+  WHEN a.HOUR BETWEEN 0 AND 5 THEN '00:00-05:59' -- Late Night/Early Morning
+  WHEN a.HOUR BETWEEN 6 AND 11 THEN '06:00-11:59' -- Morning
+  WHEN a.HOUR BETWEEN 12 AND 17 THEN '12:00-17:59' -- Afternoon
+  WHEN a.HOUR BETWEEN 18 AND 23 THEN '18:00-23:59' -- Evening/Night
+  ELSE 'Unknown'
+  END AS time_of_day,
+
+  COUNT(*) AS total_crashes,
+  COUNTIF(d.ST_CASE IS NOT NULL) AS distracted_crashes,
+  SUM(a.FATALS) AS total_fatalities,
+  SUM(IF(d.ST_CASE IS NOT NULL, a.FATALS, 0)) AS distracted_fatalities
+FROM `cmpe138-fa26.cmpe138_project.accident` AS a
+LEFT JOIN distracted_crashes AS d
+  ON a.L_YEAR = d.L_YEAR
+ AND a.ST_CASE = d.ST_CASE
+WHERE a.L_YEAR BETWEEN 2010 AND 2018
+GROUP BY a.L_YEAR, time_of_day
+ORDER BY a.L_YEAR, distracted_crashes DESC;
 
 -- Question 5
 -- Does vehicle type correlate with a higher rate of distracted or impaired
 -- driving across states?
+WITH distracted AS (
+  SELECT DISTINCT
+    L_YEAR,
+    ST_CASE,
+    VEH_NO
+  FROM `cmpe138-fa26.cmpe138_project.distract`
+  WHERE L_YEAR BETWEEN 2010 AND 2018
+    AND MDRDSTRD IS NOT NULL
+    AND TRIM(CAST(MDRDSTRD AS STRING)) NOT IN ('', '0')
+),
 
+impaired AS (
+  SELECT DISTINCT
+    L_YEAR,
+    ST_CASE,
+    VEH_NO
+  FROM `cmpe138-fa26.cmpe138_project.drimpair`
+  WHERE L_YEAR BETWEEN 2010 AND 2018
+    AND DRIMPAIR IS NOT NULL
+    AND TRIM(CAST(DRIMPAIR AS STRING)) NOT IN ('', '0')
+)
+
+SELECT
+  v.STATE,
+  v.BODY_TYP AS vehicle_type,
+  COUNTIF(d.ST_CASE IS NOT NULL) AS distracted_vehicles,
+  COUNTIF(i.ST_CASE IS NOT NULL) AS impaired_vehicles,
+
+  ROUND(
+    100 * COUNTIF(d.ST_CASE IS NOT NULL) / COUNT(*),
+    2
+  ) AS distracted_percentage,
+
+  ROUND(
+    100 * COUNTIF(i.ST_CASE IS NOT NULL) / COUNT(*),
+    2
+  ) AS impaired_percentage
+
+FROM `cmpe138-fa26.cmpe138_project.vehicle` AS v
+LEFT JOIN distracted AS d
+  ON v.L_YEAR = d.L_YEAR
+ AND v.ST_CASE = d.ST_CASE
+ AND v.VEH_NO = d.VEH_NO
+LEFT JOIN impaired AS i
+  ON v.L_YEAR = i.L_YEAR
+ AND v.ST_CASE = i.ST_CASE
+ AND v.VEH_NO = i.VEH_NO
+ WHERE v.L_YEAR BETWEEN 2010 AND 2018
+ GROUP BY v.STATE, vehicle_type
+ ORDER BY v.STATE, distracted_percentage DESC, impaired_percentage DESC;
 
 -- Question 6
 -- Which types of occupant safety equipment were associated with the highest
 -- and lowest percentages of fatal or severe injuries, and how did these
 -- patterns vary by state?
+SELECT
+  STATE,
+  REST_USE AS safety_equipment,
+  COUNT(*) AS total_occupants,
+
+  COUNTIF(INJ_SEV IN (3,4)) AS fatal_or_severe_injuries,
+
+  ROUND(
+    100 * COUNTIF(INJ_SEV IN (3,4)) / COUNT(*),
+    2
+  ) AS fatal_or_severe_percentage
+FROM `cmpe138-fa26.cmpe138_project.person`
+WHERE L_YEAR BETWEEN 2010 AND 2018
+  AND REST_USE IS NOT NULL
+  AND INJ_SEV IN (0, 1, 2, 3, 4)
+GROUP BY STATE, safety_equipment
+ORDER BY STATE, fatal_or_severe_percentage DESC;
 
 
 -- Question 7
