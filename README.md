@@ -131,8 +131,25 @@ The current seeded row counts total 2,810,522 rows across the seven tables.
 
 ## How to Run the Workload
 
-To come. The numbered workload statements will answer the nine project
-questions and will be stored in `workload.sql`.
+The numbered workload statements are stored in `workload.sql` and correspond
+to the nine project questions.
+
+Questions 1–3 currently have working SQL statements. Questions 4–9 are listed
+in the file and will be implemented next.
+
+Run each statement separately in BigQuery. Before running a statement:
+
+1. Open **Query settings**.
+2. Set the processing location to `US`.
+3. Clear **Use cached results**.
+4. Set a suitable maximum bytes billed limit.
+5. Run the query and record the estimated bytes, actual bytes processed, and
+   elapsed time.
+
+- Question 1 reports fatal crashes and total fatalities by state and year.
+- Question 2 reports alcohol-involved fatal-crash percentages by state and year.
+- Question 3 reports driver-impairment categories, crash counts, and fatalities
+by state and year.
 
 ## How to Start the Application
 
