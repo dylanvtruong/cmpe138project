@@ -220,4 +220,3 @@ WHERE STATE = 'California'
 GROUP BY
   L_YEAR
 ORDER BY
-  L_YEAR;

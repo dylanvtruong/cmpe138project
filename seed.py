@@ -7,7 +7,7 @@ PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
 if not PROJECT_ID:
     raise SystemExit(
         "GCP_PROJECT_ID is not set. Run: "
-        '$env:GCP_PROJECT_ID = "cmpe138-fa26"'
+        '$env:GCP_PROJECT_ID = "cmpe138-testproj1"'
     )
 
 
@@ -80,7 +80,7 @@ FROM (
 """
 
 DATASET_ID = "cmpe138_project"
-START_YEAR = int(os.environ.get("FARS_START_YEAR", "2000"))
+START_YEAR = int(os.environ.get("FARS_START_YEAR", "2010"))
 END_YEAR = int(os.environ.get("FARS_END_YEAR", "2018"))
 MAX_BYTES_BILLED = int(
     os.environ.get("MAX_BYTES_BILLED", "150000000")
@@ -534,4 +534,3 @@ if (
     or factor_table.num_rows == 0
     or safetyeq_table.num_rows == 0
 ):
-    print("WARNING: No rows were copied. Check the source filter.")
