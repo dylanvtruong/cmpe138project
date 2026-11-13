@@ -33,10 +33,8 @@ ORDER BY
 -- Important interpretation:
 -- - fatal_crash_count is the denominator.
 -- - alcohol_involved_crash_count counts crashes where DRUNK_DR > 0.
--- - alcohol_involved_percentage is the percentage of fatal crashes involving at least one recorded alcohol-impaired d
-river.
--- - The query includes the counts alongside percentages, which is useful because small states can have unstable perce
-ntages.
+-- - The alcohol-involved percentage uses crashes with at least one recorded alcohol-impaired driver.
+-- - The query includes counts because percentages for small states can be unstable.
 -- - Missing DRUNK_DR values are treated as zero by IFNULL.
 
 SELECT
