@@ -7,7 +7,7 @@ SELECT
   STATE,
   COUNT(*) AS fatal_crash_count,
   IFNULL(SUM(FATALS), 0) AS total_fatalities
-FROM `cmpe138-fa26.cmpe138_project.accident`
+FROM cmpe138_project.accident
 WHERE L_YEAR BETWEEN 2010 AND 2018
 GROUP BY
   L_YEAR,
@@ -33,8 +33,10 @@ ORDER BY
 -- Important interpretation:
 -- - fatal_crash_count is the denominator.
 -- - alcohol_involved_crash_count counts crashes where DRUNK_DR > 0.
--- - alcohol_involved_percentage is the percentage of fatal crashes involving at least one recorded alcohol-impaired driver.
--- - The query includes the counts alongside percentages, which is useful because small states can have unstable percentages.
+-- - alcohol_involved_percentage is the percentage of fatal crashes involving at least one recorded alcohol-impaired d
+river.
+-- - The query includes the counts alongside percentages, which is useful because small states can have unstable perce
+ntages.
 -- - Missing DRUNK_DR values are treated as zero by IFNULL.
 
 SELECT
@@ -46,7 +48,7 @@ SELECT
     100 * COUNTIF(IFNULL(DRUNK_DR, 0) > 0) / COUNT(*),
     2
   ) AS alcohol_involved_percentage
-FROM `cmpe138-fa26.cmpe138_project.accident`
+FROM cmpe138_project.accident
 WHERE L_YEAR BETWEEN 2010 AND 2018
 GROUP BY
   L_YEAR,
@@ -74,12 +76,12 @@ FROM (
     STATE,
     ST_CASE,
     DRIMPAIR
-  FROM `cmpe138-fa26.cmpe138_project.drimpair`
+  FROM cmpe138_project.drimpair AS dr
   WHERE L_YEAR BETWEEN 2010 AND 2018
     AND DRIMPAIR IS NOT NULL
     AND DRIMPAIR != ''
 ) AS impairment_records
-JOIN `cmpe138-fa26.cmpe138_project.accident` AS accident
+JOIN cmpe138_project.accident AS accident
   ON impairment_records.L_YEAR = accident.L_YEAR
  AND impairment_records.ST_CASE = accident.ST_CASE
 GROUP BY
@@ -100,7 +102,7 @@ WITH distracted_crashes AS (
   SELECT DISTINCT
     L_YEAR,
     ST_CASE
-  FROM `cmpe138-fa26.cmpe138_project.distract`
+  FROM cmpe138_project.distract
   WHERE L_YEAR BETWEEN 2010 AND 2018
     AND MDRDSTRD IS NOT NULL
     AND TRIM(CAST(MDRDSTRD AS STRING)) NOT IN ('', '0')
@@ -120,7 +122,7 @@ SELECT
   COUNTIF(d.ST_CASE IS NOT NULL) AS distracted_crashes,
   SUM(a.FATALS) AS total_fatalities,
   SUM(IF(d.ST_CASE IS NOT NULL, a.FATALS, 0)) AS distracted_fatalities
-FROM `cmpe138-fa26.cmpe138_project.accident` AS a
+FROM cmpe138_project.accident AS a
 LEFT JOIN distracted_crashes AS d
   ON a.L_YEAR = d.L_YEAR
  AND a.ST_CASE = d.ST_CASE
@@ -136,7 +138,7 @@ WITH distracted AS (
     L_YEAR,
     ST_CASE,
     VEH_NO
-  FROM `cmpe138-fa26.cmpe138_project.distract`
+  FROM cmpe138_project.distract
   WHERE L_YEAR BETWEEN 2010 AND 2018
     AND MDRDSTRD IS NOT NULL
     AND TRIM(CAST(MDRDSTRD AS STRING)) NOT IN ('', '0')
@@ -147,7 +149,7 @@ impaired AS (
     L_YEAR,
     ST_CASE,
     VEH_NO
-  FROM `cmpe138-fa26.cmpe138_project.drimpair`
+  FROM cmpe138_project.drimpair AS dr
   WHERE L_YEAR BETWEEN 2010 AND 2018
     AND DRIMPAIR IS NOT NULL
     AND TRIM(CAST(DRIMPAIR AS STRING)) NOT IN ('', '0')
@@ -169,7 +171,7 @@ SELECT
     2
   ) AS impaired_percentage
 
-FROM `cmpe138-fa26.cmpe138_project.vehicle` AS v
+FROM cmpe138_project.vehicle AS v
 LEFT JOIN distracted AS d
   ON v.L_YEAR = d.L_YEAR
  AND v.ST_CASE = d.ST_CASE
@@ -199,7 +201,7 @@ SELECT
     2
   ) AS fatal_or_severe_percentage
 
-FROM `cmpe138-fa26.cmpe138_project.person`
+FROM cmpe138_project.person
 
 WHERE L_YEAR BETWEEN 2010 AND 2018
   AND REST_USE IS NOT NULL
@@ -211,18 +213,49 @@ ORDER BY STATE, fatal_or_severe_percentage DESC;
 -- Question 7
 -- Can a new release of crash records be inserted into the database without
 -- replacing the existing 2010-2018 records?
-
+-- Inserts a year outside the seeded range (2009 here). Pick any year that is
+-- not already in your table. List every column your seed copied.
+INSERT INTO cmpe138_project.accident
+  (L_YEAR, STATE, ST_CASE, FATALS, DRUNK_DR, HOUR)
+SELECT
+  L_YEAR, STATE, ST_CASE, FATALS, DRUNK_DR, HOUR
+FROM `bigquery-public-data.dataflix_traffic_safety.accident`
+WHERE L_YEAR = 2009;
+ 
+-- Put it back before the next measurement:
+-- DELETE FROM cmpe138_project.accident WHERE L_YEAR = 2009;
 
 -- Question 8
 -- Can a user flag an incorrect crash record so that it is excluded from
 -- future reports?
-
-
+-- Replace the literals with a real (L_YEAR, ST_CASE) from your table.
+UPDATE cmpe138_project.accident
+SET is_flagged = TRUE
+WHERE L_YEAR = 2015
+  AND ST_CASE = 60001;
+ 
+-- Put it back before the next measurement:
+-- UPDATE cmpe138_project.accident SET is_flagged = NULL
+-- WHERE L_YEAR = 2015 AND ST_CASE = 60001;
+ 
+ 
 -- Question 9
 -- Can a user enter a state, month, and hour of travel and compare those
 -- conditions with historical fatal-crash patterns?
-
--- crash_count: number of distinct crashes associated with that impairment category.
--- total_fatalities: sum of fatalities from those crashes.
--- DRIMPAIR: the recorded impairment category.
-
+-- MONTH is not in the seeded slice, so this filters on state and hour only.
+-- Literals stand in for user input. Check the STATE type in your schema:
+-- if it is a numeric code, use 6 instead of 'California'.
+SELECT
+  L_YEAR,
+  COUNT(*) AS fatal_crash_count,
+  IFNULL(SUM(FATALS), 0) AS total_fatalities,
+  COUNTIF(IFNULL(DRUNK_DR, 0) > 0) AS alcohol_involved_crash_count
+FROM cmpe138_project.accident
+WHERE STATE = 'California'
+  AND HOUR = 22
+  AND L_YEAR BETWEEN 2010 AND 2018
+  AND NOT IFNULL(is_flagged, FALSE)
+GROUP BY
+  L_YEAR
+ORDER BY
+  L_YEAR;
