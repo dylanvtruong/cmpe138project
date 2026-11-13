@@ -5,7 +5,7 @@ measure.py - measures workload statements in BigQuery with the cache OFF.
 Usage (run from the folder holding the .sql files):
   python3 measure.py workload workload.sql before
   python3 measure.py tuning tuning.sql
-  python3 measure.py workload workload-after.sql after
+  python3 measure.py workload workload_after.sql after
 
 workload mode: for each "-- Question N" statement it reports the dry-run
   estimate, then RUNS real runs: bytes processed, bytes billed, and the

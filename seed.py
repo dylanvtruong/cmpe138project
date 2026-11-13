@@ -481,6 +481,14 @@ safetyeq_query_job = client.query(
 )
 safetyeq_query_job.result()
 
+client.query(
+    f"""
+    ALTER TABLE `{accident_destination_table}`
+    ADD COLUMN IF NOT EXISTS is_flagged BOOL
+    """,
+    location="US",
+).result()
+
 print("Adding non-enforced primary and foreign keys...")
 add_constraints(client)
 
@@ -534,3 +542,4 @@ if (
     or factor_table.num_rows == 0
     or safetyeq_table.num_rows == 0
 ):
+    raise SystemExit("Seed validation failed: at least one destination table is empty.")
